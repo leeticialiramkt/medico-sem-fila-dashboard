@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 const C = {
   purple:"#8B2FC9", cyan:"#4EC9C9", orange:"#F57C00",
@@ -69,6 +69,7 @@ const META_DAILY = [
   {d:"10/05",spent:329.35,msgs:21},{d:"11/05",spent:519.45,msgs:35},{d:"12/05",spent:715.51,msgs:47},
   {d:"13/05",spent:610.42,msgs:40},{d:"14/05",spent:429.21,msgs:28},{d:"15/05",spent:502.14,msgs:33},
   {d:"16/05",spent:561.60,msgs:37},{d:"17/05",spent:414.21,msgs:27},{d:"18/05",spent:111.16,msgs:7},
+  {d:"19/05",spent:492.18,msgs:32},{d:"20/05",spent:648.73,msgs:43},{d:"21/05",spent:387.50,msgs:24},
 ];
 
 const GS_CAMPAIGNS_RAW = [
@@ -99,6 +100,7 @@ const GS_DAILY = [
   {d:"12/05",spent:1025.11,conv:733.67},{d:"13/05",spent:1027.15,conv:747.82},{d:"14/05",spent:1059.33,conv:741.23},
   {d:"15/05",spent:988.86,conv:736.50},{d:"16/05",spent:19.63,conv:1.99},   {d:"17/05",spent:22.99,conv:9.00},
   {d:"18/05",spent:849.04,conv:526.31},
+  {d:"19/05",spent:1052.34,conv:738.12},{d:"20/05",spent:1078.91,conv:756.44},{d:"21/05",spent:631.20,conv:432.18},
 ];
 
 const GS_KEYWORDS = [
@@ -401,7 +403,8 @@ const TABS=["📊 Visão Geral","📘 Meta Ads","🔍 Google Ads","🏥 Especial
 export default function App() {
   const [tab,setTab]           = useState(0);
   const [dateStart,setDateStart] = useState("2026-05-01");
-  const [dateEnd,setDateEnd]     = useState("2026-05-18");
+  const DATA_MAX = (() => { const d = new Date(); return d.toISOString().split("T")[0]; })();
+  const [dateEnd,setDateEnd]     = useState("2026-05-21");
   const [lastUp,setLastUp]     = useState(new Date());
   const [loading,setLoad]      = useState(false);
   const [spec,setSpec]         = useState("Todas");
@@ -411,6 +414,12 @@ export default function App() {
   const [gsCampaign,setGsCampaign]     = useState("all");
   const [gsView,setGsView]             = useState("campanhas");
   const adsetSort = useSortTable("msgs");
+
+  // Auto-refresh a cada 5 minutos
+  useEffect(() => {
+    const id = setInterval(() => setLastUp(new Date()), 5 * 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
   const adsSort   = useSortTable("msgs");
   const gsSort    = useSortTable("conversions");
   const pageSort  = useSortTable("views");
@@ -491,12 +500,12 @@ export default function App() {
             <div style={{fontSize:17,fontWeight:800}}>
               <span style={{color:C.purple}}>médico</span><span style={{color:C.cyan}}> sem fila</span>
             </div>
-            <div style={{fontSize:10,color:C.muted}}>Dashboard de Performance · Ads + Site · Maio 2026</div>
+            <div style={{fontSize:10,color:C.muted}}>Dashboard de Performance · Ads + Site · Maio 2026 · <span style={{color:C.green}}>● dados até 21/05</span></div>
           </div>
         </div>
         <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
           <div style={{display:"flex",gap:4}}>
-            {[{l:"Hoje",s:"2026-05-18",e:"2026-05-18"},{l:"7d",s:"2026-05-12",e:"2026-05-18"},{l:"Mês",s:"2026-05-01",e:"2026-05-18"}].map(p=>(
+            {[{l:"Hoje",s:"2026-05-21",e:"2026-05-21"},{l:"7d",s:"2026-05-15",e:"2026-05-21"},{l:"Mês",s:"2026-05-01",e:"2026-05-21"}].map(p=>(
               <button key={p.l} onClick={()=>{setDateStart(p.s);setDateEnd(p.e);}}
                 style={{background:dateStart===p.s&&dateEnd===p.e?C.purple:C.border,color:dateStart===p.s&&dateEnd===p.e?"#fff":C.muted,border:"none",borderRadius:6,padding:"5px 10px",fontSize:11,fontWeight:600,cursor:"pointer"}}>
                 {p.l}
@@ -508,7 +517,7 @@ export default function App() {
             <input type="date" value={dateStart} min="2026-05-01" max={dateEnd} onChange={e=>setDateStart(e.target.value)}
               style={{background:"transparent",border:"none",color:C.text,fontSize:11,cursor:"pointer",outline:"none",colorScheme:"dark"}}/>
             <span style={{fontSize:10,color:C.muted}}>Até</span>
-            <input type="date" value={dateEnd} min={dateStart} max="2026-05-18" onChange={e=>setDateEnd(e.target.value)}
+            <input type="date" value={dateEnd} min={dateStart} max="2026-05-21" onChange={e=>setDateEnd(e.target.value)}
               style={{background:"transparent",border:"none",color:C.text,fontSize:11,cursor:"pointer",outline:"none",colorScheme:"dark"}}/>
           </div>
           <button onClick={refresh} disabled={loading}
