@@ -446,8 +446,14 @@ export default function App() {
   const convAdsets  = filtAdsets.filter(a=>a.type==="whatsapp").map(a=>({...a,spent:a.spent*dayRatio,msgs:Math.round(a.msgs*dayRatio),impressions:Math.round(a.impressions*dayRatio)}));
   const otherAdsets = filtAdsets.filter(a=>a.type!=="whatsapp").map(a=>({...a,spent:a.spent*dayRatio,impressions:Math.round(a.impressions*dayRatio)}));
 
-  const metaSpent = filtDaily.reduce((s,d)=>s+d.spent,0);
-  const metaMsgs  = filtDaily.reduce((s,d)=>s+d.msgs,0);
+  // KPIs Meta: quando filtrado por campanha/conjunto usa soma dos ad sets; quando sem filtro usa daily total (mais preciso)
+  const isMetaFiltered = metaCampaign!=="all"||metaAdset!=="all";
+  const metaSpent = isMetaFiltered
+    ? [...convAdsets,...otherAdsets].reduce((s,a)=>s+a.spent,0)
+    : filtDaily.reduce((s,d)=>s+d.spent,0);
+  const metaMsgs = isMetaFiltered
+    ? convAdsets.reduce((s,a)=>s+a.msgs,0)
+    : filtDaily.reduce((s,d)=>s+d.msgs,0);
   const metaCPMsg = metaMsgs>0?metaSpent/metaMsgs:0;
 
   const gsFiltered = GS_CAMPAIGNS_RAW
@@ -467,7 +473,7 @@ export default function App() {
 
   const metaRollup = useMemo(()=>buildMetaRollup(convAdsets),[JSON.stringify(convAdsets)]);
   const maxMsgs    = metaRollup[0]?.msgs||1;
-  const allAlerts  = useMemo(()=>genAlerts(ADSETS,ADS),[]);
+  const allAlerts  = useMemo(()=>genAlerts(convAdsets,filtAds),[JSON.stringify(convAdsets),JSON.stringify(filtAds)]);
 
   const fmtDate  = d=>d.split("-").reverse().join("/");
   const periodLabel = dateStart===dateEnd?fmtDate(dateStart):`${fmtDate(dateStart)} a ${fmtDate(dateEnd)}`;
@@ -839,7 +845,7 @@ export default function App() {
                 </thead>
                 <tbody>
                   {[...GS_KEYWORDS]
-                    .filter(k=>gsCampaign==="all"||GS_CAMPAIGNS_RAW.find(c=>c.id===gsCampaign&&c.specialty===k.specialty))
+                    .filter(k=>gsCampaign==="all"||GS_CAMPAIGNS_RAW.find(c=>c.id===gsCampaign&&(c.specialty===k.specialty||k.specialty.toLowerCase().includes(c.specialty.toLowerCase().split(" ")[0])||c.specialty.toLowerCase().includes(k.specialty.toLowerCase().split(" ")[0]))))
                     .sort(kwSort.sortFn).map((k,i)=>(
                     <tr key={i} style={{borderBottom:`1px solid ${C.border}`,background:i%2===0?"transparent":"#ffffff04"}}>
                       <td style={{padding:"9px 12px",fontWeight:600,color:C.text,fontSize:11}}>{k.keyword}</td>
